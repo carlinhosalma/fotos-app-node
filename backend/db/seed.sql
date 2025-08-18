@@ -1,0 +1,2 @@
+-- Usuário de teste (senha: 123456) - gere o hash em runtime via API; este é apenas um exemplo.
+-- Recomenda-se criar pelo endpoint /auth/register.
