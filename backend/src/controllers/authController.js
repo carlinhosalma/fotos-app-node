@@ -7,6 +7,7 @@ const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require("uuid");
+const { sendInviteEmail } = require("../utils/emailService");
 
 exports.register = async (req, res) => {
   const { nome, email, senha , invited_by } = req.body;
@@ -209,6 +210,25 @@ exports.RecursiveNetwork = async (req, res) => {
     res.json({ networkCount: result });
   
   
+};
+
+exports.Invite = async (req, res) => {
+
+  
+    const { email } = req.body;
+    const inviterId = req.user.id; // UUID do usuário logado
+
+    if (!email) {
+      return res.status(400).json({ message: "Email é obrigatório" });
+    }
+
+    await sendInviteEmail(email, inviterId);
+  try {
+    res.json({ message: "Convite enviado com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao enviar convite:", error);
+    res.status(500).json({ message: "Erro ao enviar convite" });
+  }
 };
 
 
