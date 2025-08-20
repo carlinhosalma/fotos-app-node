@@ -5,31 +5,37 @@
  */
 const pool = require('../config/db');
 const { v4: uuidv4 } = require("uuid");
+const fs = require('fs');
+const path = require('path');
+
+
 
 exports.addPhoto = async (req, res) => {
-  const { url, descricao } = req.body;
+  const { descricao } = req.body;
+  const userId = req.user.id;
 
-  // req.user vem do middleware auth (token válido)
-  const userId = req.user?.id;
+  if (!req.file) {
+      return res.status(400).json({ error: "Nenhum arquivo enviado." });
+    }
+
+  const url = `/uploads/${req.file.filename}`;
   const photoId = uuidv4()
 
   if (!userId) {
     return res.status(401).json({ message: 'Usuário não autenticado' });
   }
-  if (!url) {
-    return res.status(400).json({ message: 'url é obrigatória' });
-  }
+
 
   try {
     await pool.query(
       'INSERT INTO fotos (id,  url,  descricao, usuario_id) VALUES (?, ?, ? ,?)',
       [photoId, url, descricao || null, userId]
     );
-    return res.status(201).json({ message: 'Foto adicionada com sucesso' });
+    return res.status(201).json({ message: 'Foto adicionada com sucesso', photoId, url });
   } catch (err) {
     console.error('[addPhoto] erro:', err);
     qr = [photoId, url, descricao || null, userId];
-    return res.status(500).json({ error: 'Erro ao adicionar foto'+ qr  });
+    return res.status(500).json({ error: 'Erro ao enviar foto'+ qr  });
   }
 };
 
@@ -82,22 +88,23 @@ exports.delPhoto = async (req, res) => {
       return res.status(404).json({ message: "Foto não encontrada ou você não tem permissão para excluir"  })
     }
 
-    await pool.query("DELETE FROM fotos WHERE id = ?", [id])
+    const photo = rows[0];
+
+
+    
+    const filePath = path.join('uploads/', '..', photo.url);
+
+    await pool.query("DELETE FROM fotos WHERE id = ?", [id]);
+
+    // Apaga o arquivo físico, se existir
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error('Erro ao excluir arquivo:', err.message);
+        // não retornamos erro aqui, apenas logamos
+      }
+    });
 
     res.json({ message: "Foto deletada com sucesso" })
-
-  
-  try {
-    // join simples para trazer o nome do autor
-    const [rows] = await pool.query( "SELECT *  FROM fotos WHERE usuario_id = ?", [req.user.id]);
-    
-   return res.json(rows);
-   //res.status(200).json(rows); // Retorna as fotos em formato JSON
-
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ message: "Erro ao deletar foto" })
-  }
 
 };
 
@@ -136,6 +143,25 @@ exports.putPhoto = async (req, res) => {
 };
 
 
+
+// Normaliza o caminho salvo no banco para um caminho absoluto no disco
+function resolveUploadAbsolutePath(rawUrlFromDB) {
+  if (!rawUrlFromDB) return null;
+
+  // Ex.: '/uploads/foto.jpg' -> 'uploads/foto.jpg'
+  // Ex.: 'uploads/foto.jpg'  -> 'uploads/foto.jpg'
+  let rel = String(rawUrlFromDB).trim().replace(/^\/+/, '');
+
+  // Se por algum motivo veio só 'foto.jpg', prefixa 'uploads/'
+  if (!rel.startsWith('uploads')) {
+    rel = path.join('uploads', rel);
+  }
+
+// Caminho absoluto a partir da raiz do backend
+  const backendRoot = path.resolve(__dirname, '..'); // pasta do backend
+  const abs = path.resolve(backendRoot, rel);        // .../backend/uploads/foto.jpg
+  return abs;
+}
 
 
 

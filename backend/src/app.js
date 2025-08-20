@@ -3,7 +3,7 @@
  */
 const express = require('express');
 const cors = require('cors');
-
+const path = require('path');
 const app = express();
 
 // Libera CORS para o frontend (React/Vue) em outro host/porta.
@@ -16,6 +16,8 @@ app.use(express.json());
 // app.get('/health', (req, res) => res.json({ ok: true }));
 // app.get('/getFotos', (req, res) => res.send('<h1>Minhas fotos</h1>'));
 
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Monta rotas de domínio
 app.use('/auth', require('./routes/authRoutes'));
