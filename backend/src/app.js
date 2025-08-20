@@ -13,7 +13,9 @@ app.use(cors());
 app.use(express.json());
 
 // Health-check simples para verificações rápidas
-app.get('/health', (req, res) => res.json({ ok: true }));
+// app.get('/health', (req, res) => res.json({ ok: true }));
+// app.get('/getFotos', (req, res) => res.send('<h1>Minhas fotos</h1>'));
+
 
 // Monta rotas de domínio
 app.use('/auth', require('./routes/authRoutes'));

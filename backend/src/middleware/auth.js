@@ -9,15 +9,20 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 module.exports = function auth(req, res, next) {
+  // MAPEAMENTO
+
+  pag = ' <h1> /middleware/auth </h1> ';
+
+
   // Authorization: Bearer xxx.yyy.zzz
   const header = req.headers['authorization'];
   if (!header) {
-    return res.status(401).json({ message: 'Token não fornecido' });
+    return res.status(401).json({ message: 'Token não fornecido' + pag });
   }
 
   const token = header.replace(/^Bearer\s+/i, '').trim();
   if (!token) {
-    return res.status(401).json({ message: 'Token inválido no header' });
+    return res.status(401).json({ message: 'Token inválido no header' + pag });
   }
 
   try {
@@ -26,7 +31,7 @@ module.exports = function auth(req, res, next) {
     req.user = decoded;
     return next();
   } catch (err) {
-    return res.status(403).json({ message: 'Token inválido ou expirado' });
+    return res.status(403).json({ message: 'Token inválido ou expirado' + pag });
   }
 };
 
